@@ -20,7 +20,7 @@ using System.Threading.Tasks;
 namespace JwtAndRefreshTokenAuth
 {
     public class JwtService : IJwtService
-    {        
+    {
         private readonly IConfigService _configService;
         private static IDistributedCache _distributedCache;
         private const string RefreshTokenName = "RefreshToken";
@@ -38,29 +38,44 @@ namespace JwtAndRefreshTokenAuth
         //    _stance = stance;
         //}
 
-        public string CreateJwtToken(string userName, Dictionary<string, string> payload, string signKey, TimeSpan expireTime, TimeSpan refreshExpireTime,DateTime expireDatetime)
+        public string CreateJwtToken(string userName, Dictionary<string, string> payload, string signKey, TimeSpan expireTime, TimeSpan refreshExpireTime, DateTime expireDatetime)
         {
-    //        Person person = new Person();
-    //        person.Age = "2";
-    //        person.Names = "wwg";
-    //        _stance.RedisStanceBase().HashSet("wwg", person.TohashEntries());
+
+            _stance.RedisStanceBase().HashSet("order_hashkey", "order_hashfield", "10");
+            List<Person> Personlist = new List<Person>();
+            Person person = new Person();
+            person.Age = "2";
+            person.Names = "wwg";
+            Personlist.Add(person);
+
+            Person person2 = new Person();
+            person2.Age = "2";
+            person2.Names = "wwg";
+            Personlist.Add(person2);
 
 
-    //        Dictionary<int, string> keyValuePairs = new Dictionary<int, string>();
-    //        keyValuePairs.Add(1,"1");
-    //        keyValuePairs.Add(2,"2");
+            var jsondemp = JsonConvert.SerializeObject(Personlist);
+            _stance.RedisStanceBase().HashSet("wwg2", "listr", jsondemp);
 
-    //        var fields = keyValuePairs.Select(
-    //pair => new HashEntry(pair.Key, pair.Value)).ToArray();
-    //        _stance.RedisStanceBase().HashSet("fields", fields);
+            _stance.RedisStanceBase().StringSet("wwg2ss", jsondemp);
 
-    //        HashEntry[] hashEntries = _stance.RedisStanceBase().HashGetAll("fields");
-    //        foreach (var item in hashEntries)
-    //        {
-                
-    //        }
-    //        var personobj= hashEntries.ConvertFromRedis<Person>();
-    //        return "";
+
+            _stance.RedisStanceBase().HashSet("wwg2person", person.TohashEntries());
+            Dictionary<int, string> keyValuePairs = new Dictionary<int, string>();
+            keyValuePairs.Add(1, "1");
+            keyValuePairs.Add(2, "2");
+
+            var fields = keyValuePairs.Select(
+    pair => new HashEntry(pair.Key, pair.Value)).ToArray();
+            _stance.RedisStanceBase().HashSet("fields", fields);
+
+            HashEntry[] hashEntries = _stance.RedisStanceBase().HashGetAll("fields");
+            foreach (var item in hashEntries)
+            {
+
+            }
+            var personobj = hashEntries.ConvertFromRedis<Person>();
+            return "";
             if (string.IsNullOrEmpty(signKey) || signKey.Length < 16)
                 throw new Exception("'signKey' must >= 16 chars");
 
@@ -113,10 +128,10 @@ namespace JwtAndRefreshTokenAuth
             }
             return cp != null;
         }
-       
+
         private static object LockRefreshTokenCache = new object();
         public string RefreshToken(string token, string signKey, TimeSpan expireTime, TimeSpan refreshExpireTime, DateTime expireDatetime)
-        {         
+        {
             var newToken = "";
             try
             {
@@ -138,7 +153,7 @@ namespace JwtAndRefreshTokenAuth
                             return newToken;
 
                         //create new token
-                        newToken = CreateJwtToken(payloadDic[JwtRegisteredClaimNames.Sub], payloadDic, signKey, expireTime, refreshExpireTime,expireDatetime);
+                        newToken = CreateJwtToken(payloadDic[JwtRegisteredClaimNames.Sub], payloadDic, signKey, expireTime, refreshExpireTime, expireDatetime);
 
                         //delete current refresh token 
                         //RemoveRefreshTokenCache(currentRefreshKey);
@@ -151,7 +166,7 @@ namespace JwtAndRefreshTokenAuth
                 //todo: write log
             }
             return newToken;
-        }       
+        }
         private string GetJwtPayloadStringFromBase64(string token)
         {
             var base64Payload = token.Split('.')[1];
@@ -173,7 +188,7 @@ namespace JwtAndRefreshTokenAuth
         {
             return !string.IsNullOrEmpty(_stance.RedisStanceBase().StringGet(GetRefreshTokenCacheName(refreshToken)));
         }
-    
+
         private void RemoveRefreshTokenCache(string refreshToken)
             => _distributedCache.Remove(GetRefreshTokenCacheName(refreshToken));
 
